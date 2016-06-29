@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 
+#include "libft.h"
+
 # define BUFSIZE 1023
 
 int create_server(int port)
@@ -31,13 +33,32 @@ int create_server(int port)
 	return (sock);
 }
 
+void	get_client_request(int cs, char *request)
+{
+	char	*tmp;
+
+	if (ft_strcmp(request, "LIST\r") == 0)
+	{
+		if (getcwd(tmp, 1024) == NULL)
+		{
+			ft_putstr_fd("BBBBBBBBBBBBBB", cs);
+			ft_putstr_fd("getcwd error\n", cs);
+		}
+		else
+		{
+			ft_putstr_fd("AAAAAAAAAAAA", cs);
+			ft_putstr_fd(tmp, cs);
+		}
+	}
+	printf("Client request: '%s'\n", request);
+}
+
 void	get_connection(int sock)
 {
 	int					cs;
 	unsigned int		cslen;
 	struct sockaddr_in	csin;
-	int					r;
-	char				buf[1024];
+	char				*buf;
 	int					pid;
 
 	if ((cs = accept(sock, (struct sockaddr *)&csin, &cslen)) < 0)
@@ -48,11 +69,8 @@ void	get_connection(int sock)
 	if ((pid = fork()) == 0)
 	{
 		close(sock);
-		while ((r = read(cs, buf, 1023)) > 0)
-		{
-			buf[r] = '\0';
-			printf("Received %d bytes: [%s]\n", r, buf);
-		}
+		while (get_next_line(cs, &buf))
+			get_client_request(cs, buf);
 		exit(0);
 	}
 	close(cs);
